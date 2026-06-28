@@ -1,0 +1,1 @@
+- [Orval query hooks require queryKey](query-options-querykey.md) — generated UseQueryOptions is not Partial; always pass queryKey from the exported get*QueryKey helper.

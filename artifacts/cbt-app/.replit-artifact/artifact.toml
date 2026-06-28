@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "CBT Platform"
+version = "1.0.0"
+id = "artifacts/cbt-app"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19478
+
+[services.development]
+run = "pnpm --filter @workspace/cbt-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cbt-app", "run", "build" ]
+publicDir = "artifacts/cbt-app/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19478"
+BASE_PATH = "/"
