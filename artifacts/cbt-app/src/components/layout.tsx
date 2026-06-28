@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, BookOpen, Users, LayoutDashboard, Settings, FileText, ClipboardList } from "lucide-react";
+import { LogOut, BookOpen, Users, LayoutDashboard, FileText, ClipboardList, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function StudentLayout({ children }: { children: ReactNode }) {
@@ -77,6 +77,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <SidebarItem href="/admin/exams" icon={<FileText size={18} />} label="Exams" active={location.startsWith("/admin/exams")} />
           <SidebarItem href="/admin/students" icon={<Users size={18} />} label="Students" active={location.startsWith("/admin/students")} />
           <SidebarItem href="/admin/results" icon={<ClipboardList size={18} />} label="Results" active={location.startsWith("/admin/results")} />
+          <SidebarItem href="/admin/report-cards" icon={<GraduationCap size={18} />} label="Report Cards" active={location.startsWith("/admin/report-cards")} />
         </nav>
         <div className="p-4 border-t">
           <div className="text-sm font-medium mb-4 text-muted-foreground px-2">{user?.name}</div>
@@ -96,6 +97,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             {location.startsWith("/admin/exams") && "Manage Exams"}
             {location.startsWith("/admin/students") && "Manage Students"}
             {location.startsWith("/admin/results") && "All Results"}
+            {location.startsWith("/admin/report-cards") && "Report Cards"}
           </h1>
         </div>
         <div className="flex-1 overflow-y-auto p-8">

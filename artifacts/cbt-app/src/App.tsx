@@ -23,6 +23,7 @@ import AdminExams from "@/pages/admin/exams";
 import AdminExamQuestions from "@/pages/admin/exam-questions";
 import AdminStudents from "@/pages/admin/students";
 import AdminResults from "@/pages/admin/results";
+import AdminReportCards from "@/pages/admin/report-cards";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,6 +80,9 @@ function Router() {
       </Route>
       <Route path="/admin/results">
         <AdminLayout><AdminResults /></AdminLayout>
+      </Route>
+      <Route path="/admin/report-cards">
+        <AdminLayout><AdminReportCards /></AdminLayout>
       </Route>
 
       <Route component={NotFound} />
