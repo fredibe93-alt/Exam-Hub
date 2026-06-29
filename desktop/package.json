@@ -1,0 +1,63 @@
+{
+  "name": "examhub-desktop",
+  "version": "1.0.0",
+  "description": "ExamHub Desktop — Fully offline CBT platform for Windows",
+  "main": "dist/main.js",
+  "scripts": {
+    "build:server": "node_modules/.bin/esbuild src/main.ts --bundle --platform=node --external:electron --external:better-sqlite3 --outfile=dist/main.js --format=cjs --target=node20",
+    "build:frontend": "node scripts/build-frontend.js",
+    "build": "npm run build:frontend && npm run build:server",
+    "package:win": "npm run build && electron-builder --win --x64",
+    "package:portable": "npm run build && electron-builder --win portable --x64",
+    "dev": "npm run build:server && electron ."
+  },
+  "build": {
+    "appId": "com.examhub.desktop",
+    "productName": "ExamHub",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "web",
+        "to": "web",
+        "filter": ["**/*"]
+      }
+    ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
+    }
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.9.1",
+    "drizzle-orm": "^0.45.2",
+    "electron": "^35.3.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.15.30",
+    "esbuild": "^0.25.5",
+    "electron-builder": "^26.0.12",
+    "typescript": "^5.9.2"
+  }
+}
