@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useEffect, useCallback } from "react";
+import { createContext, useContext, ReactNode, useEffect, useCallback, useState } from "react";
 import { useLocation } from "wouter";
 import { useGetMe, useLogin, useLogout, useRegister, getGetMeQueryKey, User, LoginInput, RegisterInput } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,9 +18,11 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const [hasToken, setHasToken] = useState(() => Boolean(localStorage.getItem("cbt_token")));
   
   const { data: user, isLoading, error } = useGetMe({
     query: {
+      enabled: hasToken,
       retry: false,
       staleTime: Infinity,
       queryKey: getGetMeQueryKey(),
@@ -34,7 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleLogin = useCallback(async (data: LoginInput) => {
     const res = await loginMutation.mutateAsync({ data });
     localStorage.setItem("cbt_token", res.token);
-    await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    queryClient.setQueryData(getGetMeQueryKey(), res.user);
+    setHasToken(true);
     if (res.user.role === "admin") {
       setLocation("/admin/dashboard");
     } else {
@@ -45,7 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleRegister = useCallback(async (data: RegisterInput) => {
     const res = await registerMutation.mutateAsync({ data });
     localStorage.setItem("cbt_token", res.token);
-    await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    queryClient.setQueryData(getGetMeQueryKey(), res.user);
+    setHasToken(true);
     setLocation("/student/dashboard");
   }, [registerMutation, queryClient, setLocation]);
 
@@ -55,22 +59,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       localStorage.removeItem("cbt_token");
       queryClient.clear();
+      setHasToken(false);
       setLocation("/login");
     }
   }, [logoutMutation, queryClient, setLocation]);
 
   // Handle unauthorized state
   useEffect(() => {
-    if (error) {
+    const status = (error as { status?: number } | null)?.status;
+    if (hasToken && status === 401) {
       localStorage.removeItem("cbt_token");
+      queryClient.removeQueries({ queryKey: getGetMeQueryKey() });
+      setHasToken(false);
     }
-  }, [error]);
+  }, [error, hasToken, queryClient]);
 
   return (
     <AuthContext.Provider
       value={{
         user: user || null,
-        isLoading,
+        isLoading: hasToken && isLoading,
         login: handleLogin,
         register: handleRegister,
         logout: handleLogout,
