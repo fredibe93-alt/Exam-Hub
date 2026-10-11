@@ -8,6 +8,7 @@ import attemptsRouter from "./attempts";
 import resultsRouter from "./results";
 import studentsRouter from "./students";
 import dashboardRouter from "./dashboard";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(attemptsRouter);
 router.use(resultsRouter);
 router.use(studentsRouter);
 router.use(dashboardRouter);
+router.use(storageRouter);
 
 export default router;

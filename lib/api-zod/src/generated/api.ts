@@ -127,6 +127,134 @@ export const DeleteStudentResponse = zod.object({
 
 
 /**
+ * @summary Generate a student's report card (admin)
+ */
+export const GetStudentReportCardParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetStudentReportCardResponse = zod.object({
+  "student": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string()
+}),
+  "generatedAt": zod.coerce.date(),
+  "subjects": zod.array(zod.object({
+  "subjectId": zod.number(),
+  "subjectName": zod.string(),
+  "exams": zod.array(zod.object({
+  "examId": zod.number(),
+  "examTitle": zod.string(),
+  "assessmentType": zod.enum(['ca1', 'ca2', 'final']),
+  "score": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "passed": zod.boolean(),
+  "grade": zod.string(),
+  "submittedAt": zod.coerce.date()
+})),
+  "assessmentTotals": zod.object({
+  "ca1": zod.object({
+  "totalScore": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "grade": zod.string(),
+  "passed": zod.boolean().optional()
+}),
+  "ca2": zod.object({
+  "totalScore": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "grade": zod.string(),
+  "passed": zod.boolean().optional()
+}),
+  "final": zod.object({
+  "totalScore": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "grade": zod.string(),
+  "passed": zod.boolean().optional()
+})
+}),
+  "totalScore": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "grade": zod.string()
+})),
+  "grandTotal": zod.object({
+  "totalScore": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "grade": zod.string(),
+  "passed": zod.boolean().optional()
+})
+})
+
+
+/**
+ * @summary Generate the current student's report card
+ */
+export const GetMyReportCardResponse = zod.object({
+  "student": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string()
+}),
+  "generatedAt": zod.coerce.date(),
+  "subjects": zod.array(zod.object({
+  "subjectId": zod.number(),
+  "subjectName": zod.string(),
+  "exams": zod.array(zod.object({
+  "examId": zod.number(),
+  "examTitle": zod.string(),
+  "assessmentType": zod.enum(['ca1', 'ca2', 'final']),
+  "score": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "passed": zod.boolean(),
+  "grade": zod.string(),
+  "submittedAt": zod.coerce.date()
+})),
+  "assessmentTotals": zod.object({
+  "ca1": zod.object({
+  "totalScore": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "grade": zod.string(),
+  "passed": zod.boolean().optional()
+}),
+  "ca2": zod.object({
+  "totalScore": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "grade": zod.string(),
+  "passed": zod.boolean().optional()
+}),
+  "final": zod.object({
+  "totalScore": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "grade": zod.string(),
+  "passed": zod.boolean().optional()
+})
+}),
+  "totalScore": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "grade": zod.string()
+})),
+  "grandTotal": zod.object({
+  "totalScore": zod.number(),
+  "totalQuestions": zod.number(),
+  "percentage": zod.number(),
+  "grade": zod.string(),
+  "passed": zod.boolean().optional()
+})
+})
+
+
+/**
  * @summary List all subjects
  */
 export const ListSubjectsResponseItem = zod.object({
@@ -220,6 +348,7 @@ export const ListExamsResponseItem = zod.object({
   "subjectName": zod.string(),
   "durationMinutes": zod.number(),
   "passingScore": zod.number(),
+  "assessmentType": zod.enum(['ca1', 'ca2', 'final']),
   "questionCount": zod.number(),
   "isActive": zod.boolean(),
   "createdAt": zod.coerce.date()
@@ -243,6 +372,7 @@ export const CreateExamBody = zod.object({
   "subjectId": zod.number(),
   "durationMinutes": zod.number().min(1),
   "passingScore": zod.number().min(1).max(createExamBodyPassingScoreMax),
+  "assessmentType": zod.enum(['ca1', 'ca2', 'final']),
   "isActive": zod.boolean().optional()
 })
 
@@ -254,6 +384,7 @@ export const CreateExamResponse = zod.object({
   "subjectName": zod.string(),
   "durationMinutes": zod.number(),
   "passingScore": zod.number(),
+  "assessmentType": zod.enum(['ca1', 'ca2', 'final']),
   "questionCount": zod.number(),
   "isActive": zod.boolean(),
   "createdAt": zod.coerce.date()
@@ -275,6 +406,7 @@ export const GetExamResponse = zod.object({
   "subjectName": zod.string(),
   "durationMinutes": zod.number(),
   "passingScore": zod.number(),
+  "assessmentType": zod.enum(['ca1', 'ca2', 'final']),
   "questionCount": zod.number(),
   "isActive": zod.boolean(),
   "createdAt": zod.coerce.date()
@@ -294,6 +426,7 @@ export const UpdateExamBody = zod.object({
   "subjectId": zod.number().optional(),
   "durationMinutes": zod.number().optional(),
   "passingScore": zod.number().optional(),
+  "assessmentType": zod.enum(['ca1', 'ca2', 'final']).optional(),
   "isActive": zod.boolean().optional()
 })
 
@@ -305,6 +438,7 @@ export const UpdateExamResponse = zod.object({
   "subjectName": zod.string(),
   "durationMinutes": zod.number(),
   "passingScore": zod.number(),
+  "assessmentType": zod.enum(['ca1', 'ca2', 'final']),
   "questionCount": zod.number(),
   "isActive": zod.boolean(),
   "createdAt": zod.coerce.date()
@@ -336,7 +470,8 @@ export const ListQuestionsResponseItem = zod.object({
   "text": zod.string(),
   "options": zod.array(zod.string()),
   "correctOption": zod.number(),
-  "order": zod.number()
+  "order": zod.number(),
+  "imagePath": zod.string().nullable()
 })
 export const ListQuestionsResponse = zod.array(ListQuestionsResponseItem)
 
@@ -361,7 +496,8 @@ export const CreateQuestionBody = zod.object({
   "text": zod.string().min(createQuestionBodyTextMin),
   "options": zod.array(zod.string()).min(createQuestionBodyOptionsMin).max(createQuestionBodyOptionsMax),
   "correctOption": zod.number().min(createQuestionBodyCorrectOptionMin),
-  "order": zod.number().optional()
+  "order": zod.number().optional(),
+  "imagePath": zod.string().nullish()
 })
 
 export const CreateQuestionResponse = zod.object({
@@ -370,7 +506,8 @@ export const CreateQuestionResponse = zod.object({
   "text": zod.string(),
   "options": zod.array(zod.string()),
   "correctOption": zod.number(),
-  "order": zod.number()
+  "order": zod.number(),
+  "imagePath": zod.string().nullable()
 })
 
 
@@ -385,7 +522,8 @@ export const UpdateQuestionBody = zod.object({
   "text": zod.string().optional(),
   "options": zod.array(zod.string()).optional(),
   "correctOption": zod.number().optional(),
-  "order": zod.number().optional()
+  "order": zod.number().optional(),
+  "imagePath": zod.string().nullish()
 })
 
 export const UpdateQuestionResponse = zod.object({
@@ -394,7 +532,8 @@ export const UpdateQuestionResponse = zod.object({
   "text": zod.string(),
   "options": zod.array(zod.string()),
   "correctOption": zod.number(),
-  "order": zod.number()
+  "order": zod.number(),
+  "imagePath": zod.string().nullable()
 })
 
 
@@ -407,6 +546,27 @@ export const DeleteQuestionParams = zod.object({
 
 export const DeleteQuestionResponse = zod.object({
   "message": zod.string()
+})
+
+
+/**
+ * @summary Request a signed URL to upload a question diagram (admin)
+ */
+export const requestDiagramUploadUrlBodyNameMax = 255;
+
+export const requestDiagramUploadUrlBodySizeMax = 8388608;
+
+
+
+export const RequestDiagramUploadUrlBody = zod.object({
+  "name": zod.string().min(1).max(requestDiagramUploadUrlBodyNameMax),
+  "size": zod.number().min(1).max(requestDiagramUploadUrlBodySizeMax),
+  "contentType": zod.enum(['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
+})
+
+export const RequestDiagramUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string()
 })
 
 
@@ -450,7 +610,8 @@ export const GetAttemptResponse = zod.object({
   "id": zod.number(),
   "text": zod.string(),
   "options": zod.array(zod.string()),
-  "order": zod.number()
+  "order": zod.number(),
+  "imagePath": zod.string().nullable()
 })),
   "savedAnswers": zod.record(zod.string(), zod.number())
 })
@@ -541,7 +702,8 @@ export const GetResultResponse = zod.object({
   "options": zod.array(zod.string()),
   "correctOption": zod.number(),
   "selectedOption": zod.number().nullable(),
-  "isCorrect": zod.boolean()
+  "isCorrect": zod.boolean(),
+  "imagePath": zod.string().nullable()
 }))
 })
 
@@ -597,6 +759,7 @@ export const GetStudentDashboardResponse = zod.object({
   "subjectName": zod.string(),
   "durationMinutes": zod.number(),
   "passingScore": zod.number(),
+  "assessmentType": zod.enum(['ca1', 'ca2', 'final']),
   "questionCount": zod.number(),
   "isActive": zod.boolean(),
   "createdAt": zod.coerce.date()

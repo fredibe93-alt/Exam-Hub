@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, attemptsTable, resultsTable, examsTable, subjectsTable } from "@workspace/db";
 import { eq, and, count, desc } from "drizzle-orm";
-import { requireAdmin } from "../lib/auth";
+import { requireAdmin, requireAuth } from "../lib/auth";
 import { GetStudentParams, DeleteStudentParams } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -45,20 +45,12 @@ router.get("/students/:id", requireAdmin, async (req, res): Promise<void> => {
   });
 });
 
-router.get("/students/:id/report-card", requireAdmin, async (req, res): Promise<void> => {
-  const studentId = parseInt(String(req.params.id), 10);
-  if (isNaN(studentId)) { res.status(400).json({ error: "Invalid student ID" }); return; }
-
-  const [student] = await db
-    .select()
-    .from(usersTable)
+async function buildReportCard(studentId: number) {
+  const [student] = await db.select().from(usersTable)
     .where(and(eq(usersTable.id, studentId), eq(usersTable.role, "student")));
-  if (!student) { res.status(404).json({ error: "Student not found" }); return; }
-
-  // Fetch all results for this student, joined with exam and subject
+  if (!student) return null;
   const rows = await db
     .select({
-      resultId: resultsTable.id,
       score: resultsTable.score,
       totalQuestions: resultsTable.totalQuestions,
       percentage: resultsTable.percentage,
@@ -66,7 +58,7 @@ router.get("/students/:id/report-card", requireAdmin, async (req, res): Promise<
       submittedAt: resultsTable.submittedAt,
       examId: examsTable.id,
       examTitle: examsTable.title,
-      passingScore: examsTable.passingScore,
+      assessmentType: examsTable.assessmentType,
       subjectId: subjectsTable.id,
       subjectName: subjectsTable.name,
     })
@@ -86,7 +78,6 @@ router.get("/students/:id/report-card", requireAdmin, async (req, res): Promise<
     a.subjectName.localeCompare(b.subjectName) || a.examTitle.localeCompare(b.examTitle)
   );
 
-  // Grade helper
   function grade(pct: number): string {
     if (pct >= 70) return "A";
     if (pct >= 60) return "B";
@@ -95,10 +86,21 @@ router.get("/students/:id/report-card", requireAdmin, async (req, res): Promise<
     return "F";
   }
 
-  // Group by subject
+  function total(exams: { score: number; totalQuestions: number }[]) {
+    const totalScore = exams.reduce((sum, exam) => sum + exam.score, 0);
+    const totalQuestions = exams.reduce((sum, exam) => sum + exam.totalQuestions, 0);
+    const percentage = totalQuestions ? (totalScore / totalQuestions) * 100 : 0;
+    return {
+      totalScore,
+      totalQuestions,
+      percentage: Number(percentage.toFixed(1)),
+      grade: grade(percentage),
+    };
+  }
+
   const subjectMap = new Map<number, {
     subjectId: number; subjectName: string;
-    exams: { examId: number; examTitle: string; score: number; totalQuestions: number; percentage: number; passed: boolean; grade: string; submittedAt: Date }[];
+    exams: { examId: number; examTitle: string; assessmentType: "ca1" | "ca2" | "final"; score: number; totalQuestions: number; percentage: number; passed: boolean; grade: string; submittedAt: Date }[];
   }>();
   for (const row of best) {
     if (!subjectMap.has(row.subjectId)) {
@@ -107,6 +109,7 @@ router.get("/students/:id/report-card", requireAdmin, async (req, res): Promise<
     subjectMap.get(row.subjectId)!.exams.push({
       examId: row.examId,
       examTitle: row.examTitle,
+      assessmentType: row.assessmentType,
       score: row.score,
       totalQuestions: row.totalQuestions,
       percentage: Number(row.percentage.toFixed(1)),
@@ -117,15 +120,15 @@ router.get("/students/:id/report-card", requireAdmin, async (req, res): Promise<
   }
 
   const subjects = Array.from(subjectMap.values()).map((s) => {
-    const totalScore = s.exams.reduce((a, e) => a + e.score, 0);
-    const totalQuestions = s.exams.reduce((a, e) => a + e.totalQuestions, 0);
-    const pct = totalQuestions > 0 ? (totalScore / totalQuestions) * 100 : 0;
+    const allTotal = total(s.exams);
     return {
       ...s,
-      totalScore,
-      totalQuestions,
-      percentage: Number(pct.toFixed(1)),
-      grade: grade(pct),
+      assessmentTotals: {
+        ca1: total(s.exams.filter((e) => e.assessmentType === "ca1")),
+        ca2: total(s.exams.filter((e) => e.assessmentType === "ca2")),
+        final: total(s.exams.filter((e) => e.assessmentType === "final")),
+      },
+      ...allTotal,
     };
   });
 
@@ -133,7 +136,7 @@ router.get("/students/:id/report-card", requireAdmin, async (req, res): Promise<
   const grandTotalQuestions = subjects.reduce((a, s) => a + s.totalQuestions, 0);
   const grandPct = grandTotalQuestions > 0 ? (grandTotalScore / grandTotalQuestions) * 100 : 0;
 
-  res.json({
+  return {
     student: { id: student.id, name: student.name, email: student.email },
     generatedAt: new Date().toISOString(),
     subjects,
@@ -144,7 +147,22 @@ router.get("/students/:id/report-card", requireAdmin, async (req, res): Promise<
       grade: grade(grandPct),
       passed: grandPct >= 40,
     },
-  });
+  };
+}
+
+router.get("/students/me/report-card", requireAuth, async (req, res): Promise<void> => {
+  const user = (req as any).user;
+  const report = await buildReportCard(user.id);
+  if (!report) { res.status(404).json({ error: "Student not found" }); return; }
+  res.json(report);
+});
+
+router.get("/students/:id/report-card", requireAdmin, async (req, res): Promise<void> => {
+  const studentId = parseInt(String(req.params.id), 10);
+  if (isNaN(studentId)) { res.status(400).json({ error: "Invalid student ID" }); return; }
+  const report = await buildReportCard(studentId);
+  if (!report) { res.status(404).json({ error: "Student not found" }); return; }
+  res.json(report);
 });
 
 router.delete("/students/:id", requireAdmin, async (req, res): Promise<void> => {

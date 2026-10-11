@@ -15,14 +15,18 @@ interface StudentSummary {
 
 interface ExamResult {
   examId: number; examTitle: string;
+  assessmentType: "ca1" | "ca2" | "final";
   score: number; totalQuestions: number;
   percentage: number; passed: boolean; grade: string;
   submittedAt: string;
 }
 
+interface AssessmentTotal { totalScore: number; totalQuestions: number; percentage: number; grade: string; }
+
 interface SubjectResult {
   subjectId: number; subjectName: string;
   exams: ExamResult[];
+  assessmentTotals: { ca1: AssessmentTotal; ca2: AssessmentTotal; final: AssessmentTotal };
   totalScore: number; totalQuestions: number;
   percentage: number; grade: string;
 }
@@ -47,6 +51,8 @@ function gradeLabel(g: string) {
   const map: Record<string, string> = { A: "Distinction", B: "Credit", C: "Merit", D: "Pass", F: "Fail" };
   return map[g] ?? g;
 }
+
+const assessmentLabels = { ca1: "CA 1", ca2: "CA 2", final: "Final" } as const;
 
 function authHeader(): Record<string, string> {
   const token = localStorage.getItem("cbt_token");
@@ -93,6 +99,8 @@ export default function AdminReportCards() {
         .rc-body { padding: 24px 32px; }
         .subject-block { margin-bottom: 24px; }
         .subject-header { background: #1e3a8a; color: white; padding: 8px 14px; border-radius: 4px 4px 0 0; font-size: 13px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; }
+        .assessment-summary { display: flex; background: #eff4ff; border-bottom: 1px solid #c7d2fe; }
+        .assessment-summary > div { flex: 1; text-align: center; padding: 7px 4px; border-right: 1px solid #c7d2fe; font-size: 11px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th { background: #e8eeff; padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #4338ca; border-bottom: 1px solid #c7d2fe; }
         td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; }
@@ -226,6 +234,17 @@ function ReportCardView({ report }: { report: ReportCard }) {
                 <div className="subject-header bg-[#1e3a8a] text-white px-4 py-2.5 text-xs font-bold tracking-wider uppercase">
                   {subj.subjectName}
                 </div>
+                <div className="assessment-summary grid grid-cols-3 divide-x border-b border-blue-100 bg-blue-50/60 text-center">
+                  {(["ca1", "ca2", "final"] as const).map((type) => {
+                    const total = subj.assessmentTotals[type];
+                    return (
+                      <div key={type} className="px-2 py-2">
+                        <div className="text-[10px] font-bold uppercase tracking-wide text-blue-700">{assessmentLabels[type]}</div>
+                        <div className="text-xs font-semibold text-slate-800">{total.totalQuestions ? `${total.totalScore}/${total.totalQuestions} · ${total.percentage}%` : "—"}</div>
+                      </div>
+                    );
+                  })}
+                </div>
                 <table className="w-full text-sm border-collapse">
                   <thead>
                     <tr className="bg-blue-50 text-xs uppercase tracking-wide text-blue-700">
@@ -240,7 +259,10 @@ function ReportCardView({ report }: { report: ReportCard }) {
                   <tbody>
                     {subj.exams.map((ex) => (
                       <tr key={ex.examId} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-4 py-2.5 font-medium">{ex.examTitle}</td>
+                        <td className="px-4 py-2.5 font-medium">
+                          <span className="block">{ex.examTitle}</span>
+                          <span className="text-[10px] uppercase tracking-wide text-blue-700">{assessmentLabels[ex.assessmentType]}</span>
+                        </td>
                         <td className="px-4 py-2.5 text-center font-mono">{ex.score}</td>
                         <td className="px-4 py-2.5 text-center font-mono text-muted-foreground">{ex.totalQuestions}</td>
                         <td className="px-4 py-2.5 text-center font-mono">{ex.percentage}%</td>

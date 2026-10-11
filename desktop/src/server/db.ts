@@ -77,6 +77,15 @@ export function initDb(dbPath: string): void {
     );
   `);
 
+  const examColumns = sqlite.prepare('PRAGMA table_info(exams)').all() as { name: string }[];
+  if (!examColumns.some((column) => column.name === 'assessment_type')) {
+    sqlite.exec("ALTER TABLE exams ADD COLUMN assessment_type TEXT NOT NULL DEFAULT 'final'");
+  }
+  const questionColumns = sqlite.prepare('PRAGMA table_info(questions)').all() as { name: string }[];
+  if (!questionColumns.some((column) => column.name === 'image_path')) {
+    sqlite.exec('ALTER TABLE questions ADD COLUMN image_path TEXT');
+  }
+
   _db = drizzle(sqlite, { schema });
 }
 

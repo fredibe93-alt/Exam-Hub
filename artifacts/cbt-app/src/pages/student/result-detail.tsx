@@ -3,6 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { QuestionDiagram } from "@/components/question-diagram";
 import { CheckCircle, XCircle, MinusCircle, ArrowLeft, Trophy } from "lucide-react";
 import { format } from "date-fns";
 
@@ -72,6 +73,7 @@ export default function ResultDetail() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium mb-3">Q{i + 1}. {q.text}</p>
+                    {q.imagePath && <QuestionDiagram imagePath={q.imagePath} className="mb-4 max-h-80 max-w-full rounded-md border object-contain" />}
                     <div className="space-y-2">
                       {q.options.map((option: string, oi: number) => {
                         const isCorrect = oi === q.correctOption;

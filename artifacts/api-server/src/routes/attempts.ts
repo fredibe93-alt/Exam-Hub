@@ -108,7 +108,7 @@ router.get("/attempts/:id", requireAuth, async (req, res): Promise<void> => {
     startedAt: attempt.startedAt,
     submittedAt: attempt.submittedAt ?? null,
     timeRemainingSeconds: remaining,
-    questions: questions.map((q) => ({ id: q.id, text: q.text, options: q.options, order: q.order })),
+    questions: questions.map((q) => ({ id: q.id, text: q.text, options: q.options, order: q.order, imagePath: q.imagePath })),
     savedAnswers: answersMap,
   });
 });

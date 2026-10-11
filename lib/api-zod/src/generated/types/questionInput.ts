@@ -17,4 +17,6 @@ export interface QuestionInput {
   /** @minimum 0 */
   correctOption: number;
   order?: number;
+  /** @nullable */
+  imagePath?: string | null;
 }

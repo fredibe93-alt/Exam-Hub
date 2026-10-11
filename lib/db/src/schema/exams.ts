@@ -10,6 +10,7 @@ export const examsTable = pgTable("exams", {
   subjectId: integer("subject_id").notNull().references(() => subjectsTable.id, { onDelete: "cascade" }),
   durationMinutes: integer("duration_minutes").notNull().default(60),
   passingScore: integer("passing_score").notNull().default(50),
+  assessmentType: text("assessment_type", { enum: ["ca1", "ca2", "final"] }).notNull().default("final"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

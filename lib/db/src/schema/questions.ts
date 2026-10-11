@@ -10,6 +10,7 @@ export const questionsTable = pgTable("questions", {
   options: text("options").array().notNull(),
   correctOption: integer("correct_option").notNull(),
   order: integer("order").notNull().default(0),
+  imagePath: text("image_path"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

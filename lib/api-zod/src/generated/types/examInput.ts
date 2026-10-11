@@ -5,6 +5,7 @@
  * CBT Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { ExamInputAssessmentType } from './examInputAssessmentType';
 
 export interface ExamInput {
   /** @minLength 3 */
@@ -18,5 +19,6 @@ export interface ExamInput {
      * @maximum 100
      */
   passingScore: number;
+  assessmentType: ExamInputAssessmentType;
   isActive?: boolean;
 }

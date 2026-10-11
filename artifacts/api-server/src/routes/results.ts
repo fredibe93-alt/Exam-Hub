@@ -66,6 +66,7 @@ router.get("/results/:id", requireAuth, async (req, res): Promise<void> => {
       correctOption: q.correctOption,
       selectedOption: selected,
       isCorrect: selected !== null && selected === q.correctOption,
+      imagePath: q.imagePath,
     };
   });
   res.json({ ...base, questionReview });

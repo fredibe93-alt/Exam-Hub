@@ -13,6 +13,13 @@ import {
 
 const router: IRouter = Router();
 
+function isValidImagePath(value: unknown): boolean {
+  return value == null || (
+    typeof value === "string" &&
+    /^\/objects\/uploads\/[a-zA-Z0-9-]+\.(png|jpg|webp|gif)$/.test(value)
+  );
+}
+
 interface BulkQuestionItem {
   text: string;
   options: string[];
@@ -68,6 +75,10 @@ router.post("/exams/:examId/questions", requireAdmin, async (req, res): Promise<
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  if (!isValidImagePath(parsed.data.imagePath)) {
+    res.status(400).json({ error: "Invalid diagram image path" });
+    return;
+  }
   const [question] = await db
     .insert(questionsTable)
     .values({ ...parsed.data, examId: params.data.examId })
@@ -116,6 +127,10 @@ router.patch("/questions/:id", requireAdmin, async (req, res): Promise<void> => 
   const parsed = UpdateQuestionBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  if (!isValidImagePath(parsed.data.imagePath)) {
+    res.status(400).json({ error: "Invalid diagram image path" });
     return;
   }
   const [question] = await db

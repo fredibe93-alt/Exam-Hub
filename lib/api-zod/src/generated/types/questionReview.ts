@@ -14,4 +14,6 @@ export interface QuestionReview {
   /** @nullable */
   selectedOption: number | null;
   isCorrect: boolean;
+  /** @nullable */
+  imagePath: string | null;
 }

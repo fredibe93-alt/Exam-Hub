@@ -50,7 +50,7 @@ router.get('/attempts/:id', requireAuth, (req, res) => {
     id: attempt.id, examId: attempt.examId, examTitle: exam.title, durationMinutes: exam.durationMinutes,
     studentId: attempt.studentId, status: attempt.status, startedAt: attempt.startedAt,
     submittedAt: attempt.submittedAt ?? null, timeRemainingSeconds: remaining,
-    questions: questions.map(q => ({ id: q.id, text: q.text, options: q.options, order: q.order })),
+    questions: questions.map(q => ({ id: q.id, text: q.text, options: q.options, order: q.order, imagePath: q.imagePath })),
     savedAnswers: answersMap,
   });
 });

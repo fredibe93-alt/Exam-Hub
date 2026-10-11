@@ -11,4 +11,6 @@ export interface ExamQuestion {
   text: string;
   options: string[];
   order: number;
+  /** @nullable */
+  imagePath: string | null;
 }

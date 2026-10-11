@@ -72,7 +72,7 @@ All student records, exams, and results are saved to:
 C:\Users\<YourName>\AppData\Roaming\ExamHub\examhub.db
 ```
 
-This is a standard SQLite file. Back it up to preserve all data.
+Question diagram images are saved in the adjacent `diagrams` folder. Back up the full `ExamHub` folder to preserve student data and images.
 
 ---
 

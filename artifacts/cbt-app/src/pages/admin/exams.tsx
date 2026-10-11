@@ -14,9 +14,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, FileText, Clock, ChevronRight } from "lucide-react";
 
-interface ExamForm { title: string; description: string; subjectId: string; durationMinutes: string; passingScore: string; isActive: boolean; }
+interface ExamForm { title: string; description: string; subjectId: string; durationMinutes: string; passingScore: string; assessmentType: "ca1" | "ca2" | "final"; isActive: boolean; }
 
-const defaultForm: ExamForm = { title: "", description: "", subjectId: "", durationMinutes: "60", passingScore: "50", isActive: true };
+const defaultForm: ExamForm = { title: "", description: "", subjectId: "", durationMinutes: "60", passingScore: "50", assessmentType: "final", isActive: true };
+
+const assessmentLabels = { ca1: "CA 1", ca2: "CA 2", final: "Final" } as const;
 
 export default function AdminExams() {
   const queryClient = useQueryClient();
@@ -35,7 +37,7 @@ export default function AdminExams() {
   function openCreate() { setEditingId(null); setForm(defaultForm); setDialogOpen(true); }
   function openEdit(e: any) {
     setEditingId(e.id);
-    setForm({ title: e.title, description: e.description ?? "", subjectId: String(e.subjectId), durationMinutes: String(e.durationMinutes), passingScore: String(e.passingScore), isActive: e.isActive });
+    setForm({ title: e.title, description: e.description ?? "", subjectId: String(e.subjectId), durationMinutes: String(e.durationMinutes), passingScore: String(e.passingScore), assessmentType: e.assessmentType, isActive: e.isActive });
     setDialogOpen(true);
   }
 
@@ -43,7 +45,7 @@ export default function AdminExams() {
     if (!form.title.trim() || !form.subjectId) return;
     setSaving(true);
     try {
-      const payload = { title: form.title, description: form.description, subjectId: parseInt(form.subjectId, 10), durationMinutes: parseInt(form.durationMinutes, 10), passingScore: parseInt(form.passingScore, 10), isActive: form.isActive };
+      const payload = { title: form.title, description: form.description, subjectId: parseInt(form.subjectId, 10), durationMinutes: parseInt(form.durationMinutes, 10), passingScore: parseInt(form.passingScore, 10), assessmentType: form.assessmentType, isActive: form.isActive };
       if (editingId) { await updateExam.mutateAsync({ id: editingId, data: payload }); }
       else { await createExam.mutateAsync({ data: payload }); }
       await invalidate(); setDialogOpen(false);
@@ -79,6 +81,7 @@ export default function AdminExams() {
                   <div className="flex items-center gap-2 mb-0.5">
                     <div className="font-semibold truncate">{exam.title}</div>
                     <Badge variant={exam.isActive ? "default" : "secondary"} className="text-xs flex-shrink-0">{exam.isActive ? "Active" : "Inactive"}</Badge>
+                    <Badge variant="outline" className="text-xs flex-shrink-0">{assessmentLabels[exam.assessmentType]}</Badge>
                   </div>
                   <div className="text-xs text-primary font-medium mb-1">{exam.subjectName}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-3">
@@ -110,6 +113,16 @@ export default function AdminExams() {
               <Select value={form.subjectId} onValueChange={(v) => setForm({ ...form, subjectId: v })}>
                 <SelectTrigger><SelectValue placeholder="Select a subject" /></SelectTrigger>
                 <SelectContent>{subjects?.map((s) => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5"><Label>Assessment</Label>
+              <Select value={form.assessmentType} onValueChange={(value: "ca1" | "ca2" | "final") => setForm({ ...form, assessmentType: value })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ca1">CA 1</SelectItem>
+                  <SelectItem value="ca2">CA 2</SelectItem>
+                  <SelectItem value="final">Final Exam</SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">

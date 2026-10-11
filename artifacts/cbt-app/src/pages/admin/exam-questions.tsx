@@ -7,6 +7,7 @@ import { useRoute, useLocation } from "wouter";
 import { useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { QuestionDiagram } from "@/components/question-diagram";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -17,11 +18,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, ArrowLeft, CheckCircle, Upload, FileJson, FileText, AlertCircle, X } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-interface QuestionForm { text: string; options: string[]; correctOption: number; }
+interface QuestionForm { text: string; options: string[]; correctOption: number; imagePath: string | null; }
 interface ParsedQuestion { text: string; options: string[]; correctOption: number; }
 interface ParseError { row: number; message: string; }
 
-const defaultForm: QuestionForm = { text: "", options: ["", "", "", ""], correctOption: 0 };
+const defaultForm: QuestionForm = { text: "", options: ["", "", "", ""], correctOption: 0, imagePath: null };
 
 // ── CSV / JSON parsing helpers ────────────────────────────────────────────────
 
@@ -187,6 +188,7 @@ export default function AdminExamQuestions() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<QuestionForm>(defaultForm);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Bulk import dialog
   const [importOpen, setImportOpen] = useState(false);
@@ -204,19 +206,70 @@ export default function AdminExamQuestions() {
   function openCreate() { setEditingId(null); setForm(defaultForm); setDialogOpen(true); }
   function openEdit(q: any) {
     setEditingId(q.id);
-    setForm({ text: q.text, options: [...q.options], correctOption: q.correctOption });
+    setForm({ text: q.text, options: [...q.options], correctOption: q.correctOption, imagePath: q.imagePath ?? null });
     setDialogOpen(true);
   }
 
+  async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const supported = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+    if (!supported.includes(file.type)) {
+      window.alert("Choose a PNG, JPG, WEBP, or GIF image.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      window.alert("Diagram images must be 8 MB or smaller.");
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const token = localStorage.getItem("cbt_token");
+      const auth: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      let objectPath: string;
+      if ("electronAPI" in window) {
+        const response = await fetch("/api/storage/uploads", {
+          method: "POST",
+          headers: { ...auth, "Content-Type": file.type },
+          body: file,
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? "Image upload failed.");
+        objectPath = data.objectPath;
+      } else {
+        const response = await fetch("/api/storage/uploads/request-url", {
+          method: "POST",
+          headers: { ...auth, "Content-Type": "application/json" },
+          body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? "Image upload failed.");
+        const uploadResponse = await fetch(data.uploadURL, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        if (!uploadResponse.ok) throw new Error("The image could not be saved to cloud storage.");
+        objectPath = data.objectPath;
+      }
+      setForm((current) => ({ ...current, imagePath: objectPath }));
+    } catch (error) {
+      window.alert((error as Error).message || "Image upload failed.");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
   async function handleSave() {
-    if (!form.text.trim() || form.options.filter(o => o.trim()).length < 2) return;
+    if (!form.text.trim() || form.options.filter(o => o.trim()).length < 2 || uploadingImage) return;
     setSaving(true);
     const cleanOptions = form.options.filter(o => o.trim());
     try {
       if (editingId) {
-        await updateQuestion.mutateAsync({ id: editingId, data: { text: form.text, options: cleanOptions, correctOption: form.correctOption } });
+        await updateQuestion.mutateAsync({ id: editingId, data: { text: form.text, options: cleanOptions, correctOption: form.correctOption, imagePath: form.imagePath } });
       } else {
-        await createQuestion.mutateAsync({ examId, data: { text: form.text, options: cleanOptions, correctOption: form.correctOption, order: questions?.length ?? 0 } });
+        await createQuestion.mutateAsync({ examId, data: { text: form.text, options: cleanOptions, correctOption: form.correctOption, order: questions?.length ?? 0, imagePath: form.imagePath } });
       }
       await invalidate(); setDialogOpen(false);
     } finally { setSaving(false); }
@@ -341,6 +394,7 @@ export default function AdminExamQuestions() {
                   <div className="flex-shrink-0 h-7 w-7 rounded-full bg-primary/10 text-primary text-sm font-bold flex items-center justify-center mt-0.5">{idx + 1}</div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium mb-3">{q.text}</p>
+                    {q.imagePath && <QuestionDiagram imagePath={q.imagePath} className="mb-4 max-h-72 max-w-full rounded-md border object-contain" />}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {q.options.map((opt, oi) => (
                         <div key={oi} className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded border ${oi === q.correctOption ? "border-green-400 bg-green-50 text-green-800" : "border-border text-muted-foreground"}`}>
@@ -372,6 +426,18 @@ export default function AdminExamQuestions() {
               <Textarea value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} placeholder="Enter the question here..." rows={3} />
             </div>
             <div className="space-y-2">
+              <Label>Diagram image (optional)</Label>
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" id="question-diagram-upload" onChange={handleImageSelect} />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" onClick={() => document.getElementById("question-diagram-upload")?.click()} disabled={uploadingImage}>
+                  <Upload className="h-4 w-4 mr-2" />{uploadingImage ? "Uploading…" : form.imagePath ? "Replace image" : "Upload image"}
+                </Button>
+                <span className="text-xs text-muted-foreground">PNG, JPG, WEBP, or GIF · up to 8 MB</span>
+                {form.imagePath && <Button type="button" size="sm" variant="ghost" onClick={() => setForm({ ...form, imagePath: null })}>Remove</Button>}
+              </div>
+              {form.imagePath && <QuestionDiagram imagePath={form.imagePath} alt="Diagram preview" className="max-h-56 max-w-full rounded-md border object-contain" />}
+            </div>
+            <div className="space-y-2">
               <Label>Answer Options</Label>
               <p className="text-xs text-muted-foreground">Select the correct answer by clicking the radio button.</p>
               {form.options.map((opt, i) => (
@@ -385,7 +451,7 @@ export default function AdminExamQuestions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || !form.text.trim() || form.options.filter(o => o.trim()).length < 2}>{saving ? "Saving..." : "Save"}</Button>
+            <Button onClick={handleSave} disabled={saving || uploadingImage || !form.text.trim() || form.options.filter(o => o.trim()).length < 2}>{saving ? "Saving..." : "Save"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

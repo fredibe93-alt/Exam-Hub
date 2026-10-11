@@ -75,6 +75,15 @@ export interface SubjectUpdate {
   description?: string;
 }
 
+export type ExamAssessmentType = typeof ExamAssessmentType[keyof typeof ExamAssessmentType];
+
+
+export const ExamAssessmentType = {
+  ca1: 'ca1',
+  ca2: 'ca2',
+  final: 'final',
+} as const;
+
 export interface Exam {
   id: number;
   title: string;
@@ -83,10 +92,20 @@ export interface Exam {
   subjectName: string;
   durationMinutes: number;
   passingScore: number;
+  assessmentType: ExamAssessmentType;
   questionCount: number;
   isActive: boolean;
   createdAt: string;
 }
+
+export type ExamInputAssessmentType = typeof ExamInputAssessmentType[keyof typeof ExamInputAssessmentType];
+
+
+export const ExamInputAssessmentType = {
+  ca1: 'ca1',
+  ca2: 'ca2',
+  final: 'final',
+} as const;
 
 export interface ExamInput {
   /** @minLength 3 */
@@ -100,8 +119,18 @@ export interface ExamInput {
      * @maximum 100
      */
   passingScore: number;
+  assessmentType: ExamInputAssessmentType;
   isActive?: boolean;
 }
+
+export type ExamUpdateAssessmentType = typeof ExamUpdateAssessmentType[keyof typeof ExamUpdateAssessmentType];
+
+
+export const ExamUpdateAssessmentType = {
+  ca1: 'ca1',
+  ca2: 'ca2',
+  final: 'final',
+} as const;
 
 export interface ExamUpdate {
   title?: string;
@@ -109,6 +138,7 @@ export interface ExamUpdate {
   subjectId?: number;
   durationMinutes?: number;
   passingScore?: number;
+  assessmentType?: ExamUpdateAssessmentType;
   isActive?: boolean;
 }
 
@@ -119,6 +149,8 @@ export interface Question {
   options: string[];
   correctOption: number;
   order: number;
+  /** @nullable */
+  imagePath: string | null;
 }
 
 export interface QuestionInput {
@@ -132,6 +164,8 @@ export interface QuestionInput {
   /** @minimum 0 */
   correctOption: number;
   order?: number;
+  /** @nullable */
+  imagePath?: string | null;
 }
 
 export interface QuestionUpdate {
@@ -139,6 +173,8 @@ export interface QuestionUpdate {
   options?: string[];
   correctOption?: number;
   order?: number;
+  /** @nullable */
+  imagePath?: string | null;
 }
 
 export type AttemptStatus = typeof AttemptStatus[keyof typeof AttemptStatus];
@@ -178,6 +214,8 @@ export interface ExamQuestion {
   text: string;
   options: string[];
   order: number;
+  /** @nullable */
+  imagePath: string | null;
 }
 
 export interface AttemptDetail {
@@ -224,6 +262,8 @@ export interface QuestionReview {
   /** @nullable */
   selectedOption: number | null;
   isCorrect: boolean;
+  /** @nullable */
+  imagePath: string | null;
 }
 
 export interface ResultDetail {
@@ -240,6 +280,94 @@ export interface ResultDetail {
   passed: boolean;
   submittedAt: string;
   questionReview: QuestionReview[];
+}
+
+export type DiagramUploadInputContentType = typeof DiagramUploadInputContentType[keyof typeof DiagramUploadInputContentType];
+
+
+export const DiagramUploadInputContentType = {
+  'image/png': 'image/png',
+  'image/jpeg': 'image/jpeg',
+  'image/webp': 'image/webp',
+  'image/gif': 'image/gif',
+} as const;
+
+export interface DiagramUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 8388608
+     */
+  size: number;
+  contentType: DiagramUploadInputContentType;
+}
+
+export interface DiagramUploadUrl {
+  uploadURL: string;
+  objectPath: string;
+}
+
+export type ReportCardStudent = {
+  id: number;
+  name: string;
+  email: string;
+};
+
+export type ReportCardExamAssessmentType = typeof ReportCardExamAssessmentType[keyof typeof ReportCardExamAssessmentType];
+
+
+export const ReportCardExamAssessmentType = {
+  ca1: 'ca1',
+  ca2: 'ca2',
+  final: 'final',
+} as const;
+
+export interface ReportCardExam {
+  examId: number;
+  examTitle: string;
+  assessmentType: ReportCardExamAssessmentType;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  passed: boolean;
+  grade: string;
+  submittedAt: string;
+}
+
+export interface ReportCardTotal {
+  totalScore: number;
+  totalQuestions: number;
+  percentage: number;
+  grade: string;
+  passed?: boolean;
+}
+
+export type ReportCardSubjectAssessmentTotals = {
+  ca1: ReportCardTotal;
+  ca2: ReportCardTotal;
+  final: ReportCardTotal;
+};
+
+export interface ReportCardSubject {
+  subjectId: number;
+  subjectName: string;
+  exams: ReportCardExam[];
+  assessmentTotals: ReportCardSubjectAssessmentTotals;
+  totalScore: number;
+  totalQuestions: number;
+  percentage: number;
+  grade: string;
+}
+
+export interface ReportCard {
+  student: ReportCardStudent;
+  generatedAt: string;
+  subjects: ReportCardSubject[];
+  grandTotal: ReportCardTotal;
 }
 
 export interface StudentDashboard {

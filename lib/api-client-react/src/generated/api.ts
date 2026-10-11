@@ -25,6 +25,8 @@ import type {
   Attempt,
   AttemptDetail,
   AuthResponse,
+  DiagramUploadInput,
+  DiagramUploadUrl,
   Exam,
   ExamInput,
   ExamUpdate,
@@ -35,6 +37,7 @@ import type {
   QuestionInput,
   QuestionUpdate,
   RegisterInput,
+  ReportCard,
   Result,
   ResultDetail,
   Student,
@@ -659,6 +662,160 @@ export const useDeleteStudent = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeleteStudentMutationOptions(options));
     }
+
+export const getGetStudentReportCardUrl = (id: number,) => {
+
+
+
+
+  return `/api/students/${id}/report-card`
+}
+
+/**
+ * @summary Generate a student's report card (admin)
+ */
+export const getStudentReportCard = async (id: number, options?: RequestInit): Promise<ReportCard> => {
+
+  return customFetch<ReportCard>(getGetStudentReportCardUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStudentReportCardQueryKey = (id: number,) => {
+    return [
+    `/api/students/${id}/report-card`
+    ] as const;
+    }
+
+
+export const getGetStudentReportCardQueryOptions = <TData = Awaited<ReturnType<typeof getStudentReportCard>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStudentReportCard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStudentReportCardQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStudentReportCard>>> = ({ signal }) => getStudentReportCard(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStudentReportCard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStudentReportCardQueryResult = NonNullable<Awaited<ReturnType<typeof getStudentReportCard>>>
+export type GetStudentReportCardQueryError = ErrorType<void>
+
+
+/**
+ * @summary Generate a student's report card (admin)
+ */
+
+export function useGetStudentReportCard<TData = Awaited<ReturnType<typeof getStudentReportCard>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStudentReportCard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStudentReportCardQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMyReportCardUrl = () => {
+
+
+
+
+  return `/api/students/me/report-card`
+}
+
+/**
+ * @summary Generate the current student's report card
+ */
+export const getMyReportCard = async ( options?: RequestInit): Promise<ReportCard> => {
+
+  return customFetch<ReportCard>(getGetMyReportCardUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyReportCardQueryKey = () => {
+    return [
+    `/api/students/me/report-card`
+    ] as const;
+    }
+
+
+export const getGetMyReportCardQueryOptions = <TData = Awaited<ReturnType<typeof getMyReportCard>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyReportCard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyReportCardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyReportCard>>> = ({ signal }) => getMyReportCard({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyReportCard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyReportCardQueryResult = NonNullable<Awaited<ReturnType<typeof getMyReportCard>>>
+export type GetMyReportCardQueryError = ErrorType<void>
+
+
+/**
+ * @summary Generate the current student's report card
+ */
+
+export function useGetMyReportCard<TData = Awaited<ReturnType<typeof getMyReportCard>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyReportCard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyReportCardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListSubjectsUrl = () => {
 
@@ -1677,6 +1834,76 @@ export const useDeleteQuestion = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteQuestionMutationOptions(options));
+    }
+
+export const getRequestDiagramUploadUrlUrl = () => {
+
+
+
+
+  return `/api/storage/uploads/request-url`
+}
+
+/**
+ * @summary Request a signed URL to upload a question diagram (admin)
+ */
+export const requestDiagramUploadUrl = async (diagramUploadInput: DiagramUploadInput, options?: RequestInit): Promise<DiagramUploadUrl> => {
+
+  return customFetch<DiagramUploadUrl>(getRequestDiagramUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(diagramUploadInput)
+  }
+);}
+
+
+
+
+export const getRequestDiagramUploadUrlMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestDiagramUploadUrl>>, TError,{data: BodyType<DiagramUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestDiagramUploadUrl>>, TError,{data: BodyType<DiagramUploadInput>}, TContext> => {
+
+const mutationKey = ['requestDiagramUploadUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestDiagramUploadUrl>>, {data: BodyType<DiagramUploadInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestDiagramUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestDiagramUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestDiagramUploadUrl>>>
+    export type RequestDiagramUploadUrlMutationBody = BodyType<DiagramUploadInput>
+    export type RequestDiagramUploadUrlMutationError = ErrorType<void>
+
+    /**
+ * @summary Request a signed URL to upload a question diagram (admin)
+ */
+export const useRequestDiagramUploadUrl = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestDiagramUploadUrl>>, TError,{data: BodyType<DiagramUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestDiagramUploadUrl>>,
+        TError,
+        {data: BodyType<DiagramUploadInput>},
+        TContext
+      > => {
+      return useMutation(getRequestDiagramUploadUrlMutationOptions(options));
     }
 
 export const getStartAttemptUrl = (examId: number,) => {

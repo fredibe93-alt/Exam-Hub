@@ -11,4 +11,6 @@ export interface QuestionUpdate {
   options?: string[];
   correctOption?: number;
   order?: number;
+  /** @nullable */
+  imagePath?: string | null;
 }

@@ -2,6 +2,7 @@ import { useGetAttempt, useSaveAnswers, useSubmitAttempt, getGetAttemptQueryKey 
 import { useLocation, useRoute } from "wouter";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { QuestionDiagram } from "@/components/question-diagram";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -167,6 +168,7 @@ export default function ExamTake() {
                 <Card>
                   <CardContent className="p-6">
                     <p className="text-base font-medium leading-relaxed mb-6">{currentQuestion.text}</p>
+                    {currentQuestion.imagePath && <QuestionDiagram imagePath={currentQuestion.imagePath} className="mb-6 max-h-[28rem] max-w-full rounded-md border object-contain" />}
                     <div className="space-y-3">
                       {currentQuestion.options.map((option, i) => {
                         const selected = answers[String(currentQuestion.id)] === i;

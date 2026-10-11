@@ -41,7 +41,7 @@ router.get('/results/:id', requireAuth, (req, res) => {
 
   const questionReview = questions.map(q => {
     const selected = answerMap.has(q.id) ? answerMap.get(q.id)! : null;
-    return { questionId: q.id, text: q.text, options: q.options, correctOption: q.correctOption, selectedOption: selected, isCorrect: selected !== null && selected === q.correctOption };
+    return { questionId: q.id, text: q.text, options: q.options, correctOption: q.correctOption, selectedOption: selected, isCorrect: selected !== null && selected === q.correctOption, imagePath: q.imagePath };
   });
 
   res.json({ ...base, questionReview });

@@ -5,6 +5,7 @@
  * CBT Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { ExamUpdateAssessmentType } from './examUpdateAssessmentType';
 
 export interface ExamUpdate {
   title?: string;
@@ -12,5 +13,6 @@ export interface ExamUpdate {
   subjectId?: number;
   durationMinutes?: number;
   passingScore?: number;
+  assessmentType?: ExamUpdateAssessmentType;
   isActive?: boolean;
 }

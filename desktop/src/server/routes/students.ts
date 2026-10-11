@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { eq, and } from 'drizzle-orm';
 import { getDb } from '../db';
 import { usersTable, attemptsTable, resultsTable, examsTable, subjectsTable } from '../schema';
-import { requireAdmin } from '../auth';
+import { requireAdmin, requireAuth } from '../auth';
 
 const router = Router();
 
@@ -28,11 +28,10 @@ router.get('/students/:id', requireAdmin, (req, res) => {
   res.json({ id: student.id, name: student.name, email: student.email, createdAt: student.createdAt, totalAttempts: attempts.length, passedCount: passed.length });
 });
 
-router.get('/students/:id/report-card', requireAdmin, (req, res) => {
-  const studentId = parseInt(String(req.params.id), 10);
+function buildReportCard(studentId: number) {
   const db = getDb();
   const student = db.select().from(usersTable).where(and(eq(usersTable.id, studentId), eq(usersTable.role, 'student'))).get();
-  if (!student) { res.status(404).json({ error: 'Student not found' }); return; }
+  if (!student) return null;
 
   const allResults = db.select().from(resultsTable).where(eq(resultsTable.studentId, studentId)).all();
   const allExams = db.select().from(examsTable).all();
@@ -59,26 +58,53 @@ router.get('/students/:id/report-card', requireAdmin, (req, res) => {
     const subject = subjectMap.get(exam.subjectId);
     if (!subject) continue;
     if (!subjectGroups.has(subject.id)) subjectGroups.set(subject.id, { subjectId: subject.id, subjectName: subject.name, exams: [] });
-    subjectGroups.get(subject.id)!.exams.push({ examId: r.examId, examTitle: exam.title, score: r.score, totalQuestions: r.totalQuestions, percentage: Number(r.percentage.toFixed(1)), passed: r.passed, grade: grade(r.percentage), submittedAt: r.submittedAt });
+    subjectGroups.get(subject.id)!.exams.push({ examId: r.examId, examTitle: exam.title, assessmentType: exam.assessmentType, score: r.score, totalQuestions: r.totalQuestions, percentage: Number(r.percentage.toFixed(1)), passed: r.passed, grade: grade(r.percentage), submittedAt: r.submittedAt });
+  }
+
+  function total(exams: { score: number; totalQuestions: number }[]) {
+    const totalScore = exams.reduce((sum, exam) => sum + exam.score, 0);
+    const totalQuestions = exams.reduce((sum, exam) => sum + exam.totalQuestions, 0);
+    const percentage = totalQuestions > 0 ? (totalScore / totalQuestions) * 100 : 0;
+    return { totalScore, totalQuestions, percentage: Number(percentage.toFixed(1)), grade: grade(percentage) };
   }
 
   const subjects = Array.from(subjectGroups.values()).sort((a, b) => a.subjectName.localeCompare(b.subjectName)).map(s => {
-    const total = s.exams.reduce((a: number, e: any) => a + e.score, 0);
-    const totalQ = s.exams.reduce((a: number, e: any) => a + e.totalQuestions, 0);
-    const pct = totalQ > 0 ? (total / totalQ) * 100 : 0;
-    return { ...s, totalScore: total, totalQuestions: totalQ, percentage: Number(pct.toFixed(1)), grade: grade(pct) };
+    return {
+      ...s,
+      assessmentTotals: {
+        ca1: total(s.exams.filter((e: any) => e.assessmentType === 'ca1')),
+        ca2: total(s.exams.filter((e: any) => e.assessmentType === 'ca2')),
+        final: total(s.exams.filter((e: any) => e.assessmentType === 'final')),
+      },
+      ...total(s.exams),
+    };
   });
 
   const grandScore = subjects.reduce((a, s) => a + s.totalScore, 0);
   const grandQ = subjects.reduce((a, s) => a + s.totalQuestions, 0);
   const grandPct = grandQ > 0 ? (grandScore / grandQ) * 100 : 0;
 
-  res.json({
+  return {
     student: { id: student.id, name: student.name, email: student.email },
     generatedAt: new Date().toISOString(),
     subjects,
     grandTotal: { totalScore: grandScore, totalQuestions: grandQ, percentage: Number(grandPct.toFixed(1)), grade: grade(grandPct), passed: grandPct >= 40 },
-  });
+  };
+}
+
+router.get('/students/me/report-card', requireAuth, (req, res) => {
+  const user = (req as any).user;
+  const report = buildReportCard(user.id);
+  if (!report) { res.status(404).json({ error: 'Student not found' }); return; }
+  res.json(report);
+});
+
+router.get('/students/:id/report-card', requireAdmin, (req, res) => {
+  const studentId = parseInt(String(req.params.id), 10);
+  if (!Number.isInteger(studentId)) { res.status(400).json({ error: 'Invalid student ID' }); return; }
+  const report = buildReportCard(studentId);
+  if (!report) { res.status(404).json({ error: 'Student not found' }); return; }
+  res.json(report);
 });
 
 router.delete('/students/:id', requireAdmin, (req, res) => {

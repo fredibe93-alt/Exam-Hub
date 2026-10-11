@@ -1,11 +1,15 @@
 import express from 'express';
 import path from 'path';
+import { mkdirSync } from 'node:fs';
 import { initDb } from './db';
 import { seedDb } from './seed';
 import router from './routes/index';
+import { createStorageRouter } from './routes/storage';
 
 export function startServer(port: number, dataDir: string, webDir: string): Promise<void> {
   const dbPath = path.join(dataDir, 'examhub.db');
+  const diagramsDir = path.join(dataDir, 'diagrams', 'uploads');
+  mkdirSync(diagramsDir, { recursive: true });
   initDb(dbPath);
   seedDb();
 
@@ -13,6 +17,7 @@ export function startServer(port: number, dataDir: string, webDir: string): Prom
   app.use(express.json({ limit: '10mb' }));
 
   app.use('/api', router);
+  app.use('/api', createStorageRouter(dataDir));
 
   app.use(express.static(webDir));
   app.get('*', (_req, res) => {

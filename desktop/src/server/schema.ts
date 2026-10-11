@@ -32,6 +32,7 @@ export const examsTable = sqliteTable('exams', {
   subjectId: integer('subject_id').notNull().references(() => subjectsTable.id, { onDelete: 'cascade' }),
   durationMinutes: integer('duration_minutes').notNull().default(60),
   passingScore: integer('passing_score').notNull().default(50),
+  assessmentType: text('assessment_type', { enum: ['ca1', 'ca2', 'final'] }).notNull().default('final'),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 });
@@ -43,6 +44,7 @@ export const questionsTable = sqliteTable('questions', {
   options: jsonCol<string[]>('options').notNull(),
   correctOption: integer('correct_option').notNull(),
   order: integer('order').notNull().default(0),
+  imagePath: text('image_path'),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 });
 

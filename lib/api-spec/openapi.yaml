@@ -166,6 +166,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
 
+  /students/{id}/report-card:
+    get:
+      operationId: getStudentReportCard
+      tags: [students]
+      summary: Generate a student's report card (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Report card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportCard"
+        "404":
+          description: Student not found
+
+  /students/me/report-card:
+    get:
+      operationId: getMyReportCard
+      tags: [students]
+      summary: Generate the current student's report card
+      responses:
+        "200":
+          description: Report card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportCard"
+        "401":
+          description: Unauthorized
+
   # Subjects
   /subjects:
     get:
@@ -440,6 +476,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
+
+  /storage/uploads/request-url:
+    post:
+      operationId: requestDiagramUploadUrl
+      tags: [questions]
+      summary: Request a signed URL to upload a question diagram (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiagramUploadInput"
+      responses:
+        "200":
+          description: Signed upload URL and object path
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagramUploadUrl"
+        "400":
+          description: Invalid image metadata
 
   # Attempts
   /exams/{examId}/attempts:
@@ -727,7 +784,7 @@ components:
     # Exams
     Exam:
       type: object
-      required: [id, title, subjectId, subjectName, durationMinutes, passingScore, questionCount, isActive, createdAt]
+      required: [id, title, subjectId, subjectName, durationMinutes, passingScore, assessmentType, questionCount, isActive, createdAt]
       properties:
         id:
           type: integer
@@ -743,6 +800,9 @@ components:
           type: integer
         passingScore:
           type: integer
+        assessmentType:
+          type: string
+          enum: [ca1, ca2, final]
         questionCount:
           type: integer
         isActive:
@@ -753,7 +813,7 @@ components:
 
     ExamInput:
       type: object
-      required: [title, subjectId, durationMinutes, passingScore]
+      required: [title, subjectId, durationMinutes, passingScore, assessmentType]
       properties:
         title:
           type: string
@@ -769,6 +829,9 @@ components:
           type: integer
           minimum: 1
           maximum: 100
+        assessmentType:
+          type: string
+          enum: [ca1, ca2, final]
         isActive:
           type: boolean
 
@@ -785,13 +848,16 @@ components:
           type: integer
         passingScore:
           type: integer
+        assessmentType:
+          type: string
+          enum: [ca1, ca2, final]
         isActive:
           type: boolean
 
     # Questions
     Question:
       type: object
-      required: [id, examId, text, options, correctOption, order]
+      required: [id, examId, text, options, correctOption, order, imagePath]
       properties:
         id:
           type: integer
@@ -807,6 +873,8 @@ components:
           type: integer
         order:
           type: integer
+        imagePath:
+          type: ["string", "null"]
 
     QuestionInput:
       type: object
@@ -826,6 +894,8 @@ components:
           minimum: 0
         order:
           type: integer
+        imagePath:
+          type: ["string", "null"]
 
     QuestionUpdate:
       type: object
@@ -840,6 +910,8 @@ components:
           type: integer
         order:
           type: integer
+        imagePath:
+          type: ["string", "null"]
 
     # Attempts
     Attempt:
@@ -902,7 +974,7 @@ components:
 
     ExamQuestion:
       type: object
-      required: [id, text, options, order]
+      required: [id, text, options, order, imagePath]
       properties:
         id:
           type: integer
@@ -914,6 +986,8 @@ components:
             type: string
         order:
           type: integer
+        imagePath:
+          type: ["string", "null"]
 
     AnswerInput:
       type: object
@@ -991,7 +1065,7 @@ components:
 
     QuestionReview:
       type: object
-      required: [questionId, text, options, correctOption, selectedOption, isCorrect]
+      required: [questionId, text, options, correctOption, selectedOption, isCorrect, imagePath]
       properties:
         questionId:
           type: integer
@@ -1007,6 +1081,103 @@ components:
           type: ["integer", "null"]
         isCorrect:
           type: boolean
+        imagePath:
+          type: ["string", "null"]
+
+    DiagramUploadInput:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        size:
+          type: integer
+          minimum: 1
+          maximum: 8388608
+        contentType:
+          type: string
+          enum: [image/png, image/jpeg, image/webp, image/gif]
+
+    DiagramUploadUrl:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+
+    ReportCard:
+      type: object
+      required: [student, generatedAt, subjects, grandTotal]
+      properties:
+        student:
+          type: object
+          required: [id, name, email]
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            email: { type: string }
+        generatedAt:
+          type: string
+          format: date-time
+        subjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportCardSubject"
+        grandTotal:
+          $ref: "#/components/schemas/ReportCardTotal"
+
+    ReportCardSubject:
+      type: object
+      required: [subjectId, subjectName, exams, assessmentTotals, totalScore, totalQuestions, percentage, grade]
+      properties:
+        subjectId: { type: integer }
+        subjectName: { type: string }
+        exams:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportCardExam"
+        assessmentTotals:
+          type: object
+          required: [ca1, ca2, final]
+          properties:
+            ca1: { $ref: "#/components/schemas/ReportCardTotal" }
+            ca2: { $ref: "#/components/schemas/ReportCardTotal" }
+            final: { $ref: "#/components/schemas/ReportCardTotal" }
+        totalScore: { type: integer }
+        totalQuestions: { type: integer }
+        percentage: { type: number }
+        grade: { type: string }
+
+    ReportCardExam:
+      type: object
+      required: [examId, examTitle, assessmentType, score, totalQuestions, percentage, passed, grade, submittedAt]
+      properties:
+        examId: { type: integer }
+        examTitle: { type: string }
+        assessmentType:
+          type: string
+          enum: [ca1, ca2, final]
+        score: { type: integer }
+        totalQuestions: { type: integer }
+        percentage: { type: number }
+        passed: { type: boolean }
+        grade: { type: string }
+        submittedAt: { type: string, format: date-time }
+
+    ReportCardTotal:
+      type: object
+      required: [totalScore, totalQuestions, percentage, grade]
+      properties:
+        totalScore: { type: integer }
+        totalQuestions: { type: integer }
+        percentage: { type: number }
+        grade: { type: string }
+        passed: { type: boolean }
 
     # Dashboards
     StudentDashboard:

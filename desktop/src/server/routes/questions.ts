@@ -13,9 +13,10 @@ router.get('/exams/:examId/questions', requireAuth, (req, res) => {
 
 router.post('/exams/:examId/questions', requireAdmin, (req, res) => {
   const examId = parseInt(String(req.params.examId), 10);
-  const { text, options, correctOption, order = 0 } = req.body ?? {};
+  const { text, options, correctOption, order = 0, imagePath = null } = req.body ?? {};
   if (!text?.trim() || !Array.isArray(options) || options.length < 2) { res.status(400).json({ error: 'text and options (min 2) are required' }); return; }
-  const [q] = getDb().insert(questionsTable).values({ examId, text: text.trim(), options, correctOption: Number(correctOption), order: Number(order) }).returning().all();
+  if (imagePath !== null && (typeof imagePath !== 'string' || !/^\/objects\/uploads\/[a-zA-Z0-9-]+\.(png|jpg|webp|gif)$/.test(imagePath))) { res.status(400).json({ error: 'Invalid diagram image path' }); return; }
+  const [q] = getDb().insert(questionsTable).values({ examId, text: text.trim(), options, correctOption: Number(correctOption), order: Number(order), imagePath }).returning().all();
   res.status(201).json(q);
 });
 
@@ -48,6 +49,10 @@ router.patch('/questions/:id', requireAdmin, (req, res) => {
   if (text !== undefined) update.text = text;
   if (options !== undefined) update.options = options;
   if (correctOption !== undefined) update.correctOption = correctOption;
+  if (req.body?.imagePath !== undefined) {
+    if (req.body.imagePath !== null && (typeof req.body.imagePath !== 'string' || !/^\/objects\/uploads\/[a-zA-Z0-9-]+\.(png|jpg|webp|gif)$/.test(req.body.imagePath))) { res.status(400).json({ error: 'Invalid diagram image path' }); return; }
+    update.imagePath = req.body.imagePath;
+  }
   const [q] = getDb().update(questionsTable).set(update).where(eq(questionsTable.id, id)).returning().all();
   if (!q) { res.status(404).json({ error: 'Question not found' }); return; }
   res.json(q);
